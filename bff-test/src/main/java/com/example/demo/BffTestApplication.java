@@ -1,7 +1,9 @@
 package com.example.demo;
 
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.circuitbreaker.EnableCircuitBreaker;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
@@ -12,12 +14,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import java.lang.reflect.Type;
-import java.net.URI;
-import java.net.URL;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@EnableCircuitBreaker
 @RestController
 @EnableDiscoveryClient
 @SpringBootApplication
@@ -30,6 +31,7 @@ public class BffTestApplication {
     }
 
     @GetMapping("/categoryNames")
+    @HystrixCommand(fallbackMethod = "categoryNamesFallback")
     public List<String> categoryNames() {
         return restTemplate()
                 .exchange("http://service-product/categories",
@@ -41,6 +43,10 @@ public class BffTestApplication {
                 .stream()
                 .map(Category::getCategoryName)
                 .collect(Collectors.toList());
+    }
+
+    public List<String> categoryNamesFallback() {
+        return Collections.emptyList();
     }
 
     public static void main(String[] args) {
