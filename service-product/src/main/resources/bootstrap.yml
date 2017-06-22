@@ -3,7 +3,13 @@ spring:
     name: service-product
   cloud:
     config:
-      uri: http://localhost:8888/
+      discovery:
+        enabled: true
+        service-id: infra-config-server
 management:
   security:
     enabled: false
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
