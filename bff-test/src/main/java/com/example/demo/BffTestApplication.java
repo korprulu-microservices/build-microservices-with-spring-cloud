@@ -1,58 +1,56 @@
 package com.example.demo;
 
-import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.client.circuitbreaker.EnableCircuitBreaker;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
-import org.springframework.context.annotation.Bean;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.RequestEntity;
+import org.springframework.cloud.netflix.feign.EnableFeignClients;
+import org.springframework.cloud.netflix.feign.FeignClient;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@EnableCircuitBreaker
+@EnableFeignClients
 @RestController
 @EnableDiscoveryClient
 @SpringBootApplication
 public class BffTestApplication {
 
-    @LoadBalanced
-    @Bean
-    RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
+    @Autowired
+    private ProductService productService;
 
     @GetMapping("/categoryNames")
-    @HystrixCommand(fallbackMethod = "categoryNamesFallback")
     public List<String> categoryNames() {
-        return restTemplate()
-                .exchange("http://service-product/categories",
-                        HttpMethod.GET,
-                        RequestEntity.EMPTY,
-                        new ParameterizedTypeReference<List<Category>>() {
-                        })
-                .getBody()
+        return productService.getCategories()
                 .stream()
                 .map(Category::getCategoryName)
                 .collect(Collectors.toList());
-    }
-
-    public List<String> categoryNamesFallback() {
-        return Collections.emptyList();
     }
 
     public static void main(String[] args) {
         SpringApplication.run(BffTestApplication.class, args);
     }
 }
+
+@FeignClient(value = "service-product", fallback = ProductServiceFallback.class)
+interface ProductService {
+    @GetMapping("/categories")
+    List<Category> getCategories();
+}
+
+@Component
+class ProductServiceFallback implements ProductService {
+
+    @Override
+    public List<Category> getCategories() {
+        return Collections.emptyList();
+    }
+}
+
 
 class Category {
     private Integer id;
