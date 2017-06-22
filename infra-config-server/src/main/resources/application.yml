@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: infra-config-server
+  cloud:
+    config:
+      server:
+        bootstrap: true
+        git:
+          uri: file://${user.home}/korprulu/workshop/config-repo/
+server:
+  port: 8888
