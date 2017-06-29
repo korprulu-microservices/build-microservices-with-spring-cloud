@@ -1,2 +1,3 @@
 rootProject.name = 'workshop-1'
 include 'dependencies'
+include 'service-product'
